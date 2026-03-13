@@ -23,16 +23,16 @@ game_code = """
         <button onclick="location.reload()" style="padding:15px 30px; font-size:20px; background:#2ecc71; color:white; border:none; border-radius:50px; box-shadow: 0 5px #27ae60;">REJOUER 🔄</button>
     </div>
 
-    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-        <div style="font-size:22px; color:#f1c40f; font-weight:bold;">Mika : <span id="score">0</span></div>
-        <div id="skin-label" style="font-size:18px; color:#00d2ff; font-weight:bold; border:1px solid #00d2ff; padding:2px 10px; border-radius:10px;">Skin: Vert</div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div style="font-size:22px; color:#f1c40f; font-weight:bold;">Mika K7la : <span id="score" style="color:white;">0</span></div>
+        <div id="skin-label" style="font-size:16px; color:#00d2ff; font-weight:bold; border:1px solid #00d2ff; padding:2px 8px; border-radius:8px;">Skin: Vert</div>
     </div>
     
     <canvas id="snakeGame" style="border:4px solid #f1c40f; border-radius:15px; background:#24344d; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1;"></canvas>
     
     <div style="margin-top:15px; display:flex; justify-content:center; gap:10px;">
-        <button onclick="setSkin('#2ecc71', '#27ae60', 'Vert')" style="background:#27ae60; color:white; border:none; padding:8px; border-radius:5px;">Skin Vert</button>
-        <button onclick="setSkin('#00d2ff', '#3a86ff', 'Bleu')" style="background:#3a86ff; color:white; border:none; padding:8px; border-radius:5px;">Skin Bleu</button>
+        <button onclick="setSkin('#2ecc71', '#27ae60', 'Vert')" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:8px; font-weight:bold;">Vert</button>
+        <button onclick="setSkin('#00d2ff', '#3a86ff', 'Bleu')" style="background:#3a86ff; color:white; border:none; padding:8px 15px; border-radius:8px; font-weight:bold;">Bleu</button>
     </div>
 
     <div style="margin-top:20px; display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; width:210px; margin-left:auto; margin-right:auto;">
@@ -48,7 +48,10 @@ game_code = """
     const ctx = canvas.getContext("2d");
     const scoreElement = document.getElementById("score");
     const skinLabel = document.getElementById("skin-label");
-    canvas.width = 400; canvas.height = 400;
+    const gameOverScreen = document.getElementById("game-over-screen");
+    
+    canvas.width = 400; 
+    canvas.height = 400;
     
     const box = 20;
     let score = 0;
@@ -56,7 +59,6 @@ game_code = """
     let food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
     let d = "RIGHT";
     
-    // Variables de Skin
     let headColor = "#2ecc71";
     let bodyColor = "#27ae60";
 
@@ -74,10 +76,9 @@ game_code = """
     }
 
     function drawMika(x, y) {
-        // Petit effet de clignotement (pulsation)
         let pulse = 10 + Math.sin(Date.now() / 100) * 5;
         ctx.shadowBlur = pulse;
-        ctx.shadowColor = "white";
+        ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
         
         ctx.fillStyle = "#000000";
         ctx.beginPath();
@@ -102,6 +103,9 @@ game_code = """
                 ctx.fillStyle = "white";
                 ctx.beginPath(); ctx.arc(snake[i].x + 6, snake[i].y + 7, 3, 0, 2*Math.PI); ctx.fill();
                 ctx.beginPath(); ctx.arc(snake[i].x + 14, snake[i].y + 7, 3, 0, 2*Math.PI); ctx.fill();
+                ctx.fillStyle = "black";
+                ctx.beginPath(); ctx.arc(snake[i].x + 6, snake[i].y + 7, 1, 0, 2*Math.PI); ctx.fill();
+                ctx.beginPath(); ctx.arc(snake[i].x + 14, snake[i].y + 7, 1, 0, 2*Math.PI); ctx.fill();
             }
         }
 
@@ -126,8 +130,8 @@ game_code = """
         let newHead = {x: snakeX, y: snakeY};
 
         if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
-            clearInterval(game);
-            document.getElementById("game-over-screen").style.display = "flex";
+            clearInterval(gameLoop);
+            gameOverScreen.style.display = "flex";
             return;
         }
 
@@ -141,8 +145,8 @@ game_code = """
         return false;
     }
 
-    let game = setInterval(draw, 150);
+    let gameLoop = setInterval(draw, 150);
 </script>
 """
 
-components.html(game_code, height=880)
+components.html(game_code, height=900)
