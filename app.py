@@ -3,7 +3,6 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Mika K7la Elite", layout="centered")
 
-# CSS pour cacher les menus Streamlit et rendre l'app plus propre
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -14,21 +13,21 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 game_code = """
-<div id="game-container" style="text-align:center; font-family: 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; padding: 20px; border-radius: 20px;">
-    <div style="font-size:32px; color:#00d2ff; font-weight:bold; margin-bottom:15px; text-shadow: 0 0 10px #00d2ff;">
+<div id="game-container" style="text-align:center; font-family: sans-serif; background: #1a1a2e; padding: 15px; border-radius: 20px;">
+    <div style="font-size:30px; color:#00d2ff; font-weight:bold; margin-bottom:10px; text-shadow: 0 0 10px #00d2ff;">
         Mika Ke7la : <span id="score" style="color:#f1c40f;">0</span>
     </div>
     
-    <canvas id="snakeGame" style="border:4px solid #00d2ff; border-radius:15px; background:#16213e; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1; box-shadow: 0 0 20px rgba(0, 210, 255, 0.3);"></canvas>
+    <canvas id="snakeGame" style="border:3px solid #00d2ff; border-radius:15px; background:#24344d; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1;"></canvas>
     
-    <div style="margin-top:25px; display:grid; grid-template-columns: repeat(3, 1fr); gap:15px; width:220px; margin-left:auto; margin-right:auto;">
+    <div style="margin-top:20px; display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; width:210px; margin-left:auto; margin-right:auto;">
         <div></div>
-        <button onclick="changeDir('UP')" style="height:70px; border-radius:15px; background:linear-gradient(145deg, #0f3460, #16213e); color:white; border:2px solid #00d2ff; font-size:24px; box-shadow: 4px 4px 10px #000;">⬆️</button>
+        <button onclick="changeDir('UP')" style="height:65px; border-radius:15px; background:#0f3460; color:white; border:2px solid #00d2ff; font-size:24px;">⬆️</button>
         <div></div>
         
-        <button onclick="changeDir('LEFT')" style="height:70px; border-radius:15px; background:linear-gradient(145deg, #0f3460, #16213e); color:white; border:2px solid #00d2ff; font-size:24px; box-shadow: 4px 4px 10px #000;">⬅️</button>
-        <button onclick="changeDir('DOWN')" style="height:70px; border-radius:15px; background:linear-gradient(145deg, #0f3460, #16213e); color:white; border:2px solid #00d2ff; font-size:24px; box-shadow: 4px 4px 10px #000;">⬇️</button>
-        <button onclick="changeDir('RIGHT')" style="height:70px; border-radius:15px; background:linear-gradient(145deg, #0f3460, #16213e); color:white; border:2px solid #00d2ff; font-size:24px; box-shadow: 4px 4px 10px #000;">➡️</button>
+        <button onclick="changeDir('LEFT')" style="height:65px; border-radius:15px; background:#0f3460; color:white; border:2px solid #00d2ff; font-size:24px;">⬅️</button>
+        <button onclick="changeDir('DOWN')" style="height:65px; border-radius:15px; background:#0f3460; color:white; border:2px solid #00d2ff; font-size:24px;">⬇️</button>
+        <button onclick="changeDir('RIGHT')" style="height:65px; border-radius:15px; background:#0f3460; color:white; border:2px solid #00d2ff; font-size:24px;">➡️</button>
     </div>
 </div>
 
@@ -52,54 +51,42 @@ game_code = """
         if(dir == "RIGHT" && d != "LEFT") d = "RIGHT";
     }
 
-    function drawGrid() {
-        ctx.strokeStyle = "#1f293a";
-        ctx.lineWidth = 1;
-        for(let i=0; i<canvas.width; i+=box) {
-            ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke();
-        }
-    }
-
     function drawMika(x, y) {
-        // Ombre portée
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "black";
+        // Effet de lumière autour du sachet pour le rendre visible
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "white";
         
-        // Corps du sachet (Noir Intense)
-        ctx.fillStyle = "#050505";
+        ctx.fillStyle = "#000000";
         ctx.beginPath();
-        ctx.roundRect(x + 2, y + 4, 16, 14, 4);
+        // Le corps du sachet
+        ctx.roundRect(x + 3, y + 5, 14, 12, 3);
         ctx.fill();
         
-        // Reflet plastique
-        ctx.fillStyle = "rgba(255,255,255,0.2)";
-        ctx.fillRect(x + 5, y + 6, 10, 2);
-        
-        ctx.shadowBlur = 0; // Reset ombre
+        // Le noeud du sachet
+        ctx.beginPath();
+        ctx.moveTo(x+10, y+5);
+        ctx.lineTo(x+5, y+1);
+        ctx.lineTo(x+15, y+1);
+        ctx.fill();
+
+        ctx.shadowBlur = 0; // On enlève l'effet pour le reste
     }
 
     function draw() {
-        ctx.fillStyle = "#16213e";
+        ctx.fillStyle = "#24344d"; // Fond bleu-gris pour contraste
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        drawGrid();
 
         for(let i = 0; i < snake.length; i++) {
-            // Effet de néon pour le serpent
-            ctx.shadowBlur = (i === 0) ? 15 : 0;
-            ctx.shadowColor = "#2ecc71";
-            
             ctx.fillStyle = (i == 0) ? "#2ecc71" : "#27ae60";
             ctx.beginPath();
-            ctx.roundRect(snake[i].x + 1, snake[i].y + 1, box - 2, box - 2, 6);
+            ctx.roundRect(snake[i].x + 1, snake[i].y + 1, box - 2, box - 2, i == 0 ? 8 : 4);
             ctx.fill();
             
-            if(i == 0) { // Yeux
+            if(i == 0) {
                 ctx.fillStyle = "white";
                 ctx.beginPath(); ctx.arc(snake[i].x + 6, snake[i].y + 7, 3, 0, 2*Math.PI); ctx.fill();
                 ctx.beginPath(); ctx.arc(snake[i].x + 14, snake[i].y + 7, 3, 0, 2*Math.PI); ctx.fill();
             }
-            ctx.shadowBlur = 0;
         }
 
         drawMika(food.x, food.y);
@@ -138,8 +125,9 @@ game_code = """
         return false;
     }
 
-    let game = setInterval(draw, 110);
+    // Vitesse ralentie (150ms au lieu de 110ms)
+    let game = setInterval(draw, 150);
 </script>
 """
 
-components.html(game_code, height=850)
+components.html(game_code, height=800)
