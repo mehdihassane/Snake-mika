@@ -1,8 +1,10 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Mika K7la Elite", layout="centered")
+# Configuration de la page pour mobile
+st.set_page_config(page_title="Snake Bello Chico", layout="centered")
 
+# Style pour masquer l'interface Streamlit et épurer le look
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -12,22 +14,25 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# Titre du jeu personnalisé
+st.markdown("<h1 style='text-align: center; color: #00d2ff; font-family: sans-serif; text-shadow: 2px 2px #f1c40f;'>🐍 Snake Bello Chico</h1>", unsafe_allow_html=True)
+
 game_code = """
-<div id="game-container" style="text-align:center; font-family: sans-serif; background: #1a1a2e; padding: 15px; border-radius: 20px;">
-    <div style="font-size:30px; color:#00d2ff; font-weight:bold; margin-bottom:10px; text-shadow: 0 0 10px #00d2ff;">
-        Mika Ke7la : <span id="score" style="color:#f1c40f;">0</span>
+<div id="game-container" style="text-align:center; font-family: 'Segoe UI', sans-serif; background: #1a1a2e; padding: 15px; border-radius: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
+    <div style="font-size:28px; color:#f1c40f; font-weight:bold; margin-bottom:15px; text-shadow: 0 0 8px rgba(241, 196, 15, 0.5);">
+        Mika Ke7la : <span id="score" style="color:#ffffff;">0</span>
     </div>
     
-    <canvas id="snakeGame" style="border:3px solid #00d2ff; border-radius:15px; background:#24344d; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1;"></canvas>
+    <canvas id="snakeGame" style="border:4px solid #f1c40f; border-radius:15px; background:#24344d; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1; box-shadow: 0 0 15px rgba(241, 196, 15, 0.2);"></canvas>
     
-    <div style="margin-top:20px; display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; width:210px; margin-left:auto; margin-right:auto;">
+    <div style="margin-top:25px; display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; width:220px; margin-left:auto; margin-right:auto;">
         <div></div>
-        <button onclick="changeDir('UP')" style="height:65px; border-radius:15px; background:#0f3460; color:white; border:2px solid #00d2ff; font-size:24px;">⬆️</button>
+        <button onclick="changeDir('UP')" style="height:70px; border-radius:18px; background:#0f3460; color:white; border:2px solid #f1c40f; font-size:26px; box-shadow: 0 4px #000;">⬆️</button>
         <div></div>
         
-        <button onclick="changeDir('LEFT')" style="height:65px; border-radius:15px; background:#0f3460; color:white; border:2px solid #00d2ff; font-size:24px;">⬅️</button>
-        <button onclick="changeDir('DOWN')" style="height:65px; border-radius:15px; background:#0f3460; color:white; border:2px solid #00d2ff; font-size:24px;">⬇️</button>
-        <button onclick="changeDir('RIGHT')" style="height:65px; border-radius:15px; background:#0f3460; color:white; border:2px solid #00d2ff; font-size:24px;">➡️</button>
+        <button onclick="changeDir('LEFT')" style="height:70px; border-radius:18px; background:#0f3460; color:white; border:2px solid #f1c40f; font-size:26px; box-shadow: 0 4px #000;">⬅️</button>
+        <button onclick="changeDir('DOWN')" style="height:70px; border-radius:18px; background:#0f3460; color:white; border:2px solid #f1c40f; font-size:26px; box-shadow: 0 4px #000;">⬇️</button>
+        <button onclick="changeDir('RIGHT')" style="height:70px; border-radius:18px; background:#0f3460; color:white; border:2px solid #f1c40f; font-size:26px; box-shadow: 0 4px #000;">➡️</button>
     </div>
 </div>
 
@@ -52,40 +57,44 @@ game_code = """
     }
 
     function drawMika(x, y) {
-        // Effet de lumière autour du sachet pour le rendre visible
+        // Aura blanche pour la visibilité du sachet noir
         ctx.shadowBlur = 15;
-        ctx.shadowColor = "white";
+        ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
         
         ctx.fillStyle = "#000000";
         ctx.beginPath();
-        // Le corps du sachet
+        // Corps du sachet
         ctx.roundRect(x + 3, y + 5, 14, 12, 3);
         ctx.fill();
         
-        // Le noeud du sachet
+        // Noeud du sachet
         ctx.beginPath();
         ctx.moveTo(x+10, y+5);
         ctx.lineTo(x+5, y+1);
         ctx.lineTo(x+15, y+1);
         ctx.fill();
 
-        ctx.shadowBlur = 0; // On enlève l'effet pour le reste
+        ctx.shadowBlur = 0; // Reset pour le serpent
     }
 
     function draw() {
-        ctx.fillStyle = "#24344d"; // Fond bleu-gris pour contraste
+        ctx.fillStyle = "#24344d"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Dessin du serpent
         for(let i = 0; i < snake.length; i++) {
             ctx.fillStyle = (i == 0) ? "#2ecc71" : "#27ae60";
             ctx.beginPath();
             ctx.roundRect(snake[i].x + 1, snake[i].y + 1, box - 2, box - 2, i == 0 ? 8 : 4);
             ctx.fill();
             
-            if(i == 0) {
+            if(i == 0) { // Yeux de Bello Chico
                 ctx.fillStyle = "white";
                 ctx.beginPath(); ctx.arc(snake[i].x + 6, snake[i].y + 7, 3, 0, 2*Math.PI); ctx.fill();
                 ctx.beginPath(); ctx.arc(snake[i].x + 14, snake[i].y + 7, 3, 0, 2*Math.PI); ctx.fill();
+                ctx.fillStyle = "black";
+                ctx.beginPath(); ctx.arc(snake[i].x + 6, snake[i].y + 7, 1, 0, 2*Math.PI); ctx.fill();
+                ctx.beginPath(); ctx.arc(snake[i].x + 14, snake[i].y + 7, 1, 0, 2*Math.PI); ctx.fill();
             }
         }
 
@@ -125,9 +134,9 @@ game_code = """
         return false;
     }
 
-    // Vitesse ralentie (150ms au lieu de 110ms)
+    // Vitesse stable pour mobile
     let game = setInterval(draw, 150);
 </script>
 """
 
-components.html(game_code, height=800)
+components.html(game_code, height=850)
