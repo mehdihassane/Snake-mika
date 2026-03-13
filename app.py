@@ -1,37 +1,48 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Mika K7la VIP", layout="centered")
+st.set_page_config(page_title="Mika K7la Elite", layout="centered")
 
-st.markdown("<h1 style='text-align: center; color: #2ecc71;'>🐍 Snake Edition Papaya</h1>", unsafe_allow_html=True)
+# CSS pour cacher les menus Streamlit et rendre l'app plus propre
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stApp {background-color: #1a1a2e;}
+    </style>
+    """, unsafe_allow_html=True)
 
 game_code = """
-<div id="game-container" style="text-align:center; font-family: sans-serif;">
-    <div style="font-size:26px; color:#f1c40f; font-weight:bold; margin-bottom:10px;">
-        Mika K7la : <span id="score">0</span>
+<div id="game-container" style="text-align:center; font-family: 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; padding: 20px; border-radius: 20px;">
+    <div style="font-size:32px; color:#00d2ff; font-weight:bold; margin-bottom:15px; text-shadow: 0 0 10px #00d2ff;">
+        Mika Ke7la : <span id="score" style="color:#f1c40f;">0</span>
     </div>
-    <canvas id="snakeGame" style="border:5px solid #34495e; border-radius:15px; background:#2c3e50; touch-action:none; width: 95%; max-width: 340px; aspect-ratio: 1/1;"></canvas>
     
-    <div style="margin-top:20px; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; width:210px; margin-left:auto; margin-right:auto;">
-        <div></div><button onclick="changeDir('UP')" style="padding:25px; border-radius:12px; background:#34495e; color:white; border:none; font-size:20px;">⬆️</button><div></div>
-        <button onclick="changeDir('LEFT')" style="padding:25px; border-radius:12px; background:#34495e; color:white; border:none; font-size:20px;">⬅️</button>
-        <button onclick="changeDir('DOWN')" style="padding:25px; border-radius:12px; background:#34495e; color:white; border:none; font-size:20px;">⬇️</button>
-        <button onclick="changeDir('RIGHT')" style="padding:25px; border-radius:12px; background:#34495e; color:white; border:none; font-size:20px;">➡️</button>
+    <canvas id="snakeGame" style="border:4px solid #00d2ff; border-radius:15px; background:#16213e; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1; box-shadow: 0 0 20px rgba(0, 210, 255, 0.3);"></canvas>
+    
+    <div style="margin-top:25px; display:grid; grid-template-columns: repeat(3, 1fr); gap:15px; width:220px; margin-left:auto; margin-right:auto;">
+        <div></div>
+        <button onclick="changeDir('UP')" style="height:70px; border-radius:15px; background:linear-gradient(145deg, #0f3460, #16213e); color:white; border:2px solid #00d2ff; font-size:24px; box-shadow: 4px 4px 10px #000;">⬆️</button>
+        <div></div>
+        
+        <button onclick="changeDir('LEFT')" style="height:70px; border-radius:15px; background:linear-gradient(145deg, #0f3460, #16213e); color:white; border:2px solid #00d2ff; font-size:24px; box-shadow: 4px 4px 10px #000;">⬅️</button>
+        <button onclick="changeDir('DOWN')" style="height:70px; border-radius:15px; background:linear-gradient(145deg, #0f3460, #16213e); color:white; border:2px solid #00d2ff; font-size:24px; box-shadow: 4px 4px 10px #000;">⬇️</button>
+        <button onclick="changeDir('RIGHT')" style="height:70px; border-radius:15px; background:linear-gradient(145deg, #0f3460, #16213e); color:white; border:2px solid #00d2ff; font-size:24px; box-shadow: 4px 4px 10px #000;">➡️</button>
     </div>
 </div>
 
 <script>
     const canvas = document.getElementById("snakeGame");
     const ctx = canvas.getContext("2d");
-    // On définit la résolution interne fixe pour la logique
-    canvas.width = 340;
-    canvas.height = 340;
+    canvas.width = 400;
+    canvas.height = 400;
     
     const scoreElement = document.getElementById("score");
     const box = 20;
     let score = 0;
-    let snake = [{x: 8 * box, y: 8 * box}, {x: 7 * box, y: 8 * box}];
-    let food = {x: Math.floor(Math.random()*15 + 1)*box, y: Math.floor(Math.random()*15 + 1)*box};
+    let snake = [{x: 10 * box, y: 10 * box}, {x: 9 * box, y: 10 * box}];
+    let food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
     let d = "RIGHT";
 
     function changeDir(dir) {
@@ -41,38 +52,54 @@ game_code = """
         if(dir == "RIGHT" && d != "LEFT") d = "RIGHT";
     }
 
+    function drawGrid() {
+        ctx.strokeStyle = "#1f293a";
+        ctx.lineWidth = 1;
+        for(let i=0; i<canvas.width; i+=box) {
+            ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke();
+        }
+    }
+
     function drawMika(x, y) {
-        ctx.fillStyle = "#000000";
+        // Ombre portée
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "black";
+        
+        // Corps du sachet (Noir Intense)
+        ctx.fillStyle = "#050505";
         ctx.beginPath();
-        ctx.roundRect(x + 4, y + 6, 12, 12, 3);
+        ctx.roundRect(x + 2, y + 4, 16, 14, 4);
         ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(x + 10, y + 6);
-        ctx.lineTo(x + 6, y + 2);
-        ctx.lineTo(x + 14, y + 2);
-        ctx.closePath();
-        ctx.fill();
-        // Reflet blanc plus visible sur le sachet
-        ctx.fillStyle = "rgba(255,255,255,0.3)";
-        ctx.fillRect(x + 6, y + 8, 4, 2);
+        
+        // Reflet plastique
+        ctx.fillStyle = "rgba(255,255,255,0.2)";
+        ctx.fillRect(x + 5, y + 6, 10, 2);
+        
+        ctx.shadowBlur = 0; // Reset ombre
     }
 
     function draw() {
-        // Fond gris bleu foncé pour bien voir le sachet noir
-        ctx.fillStyle = "#2c3e50";
+        ctx.fillStyle = "#16213e";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
 
         for(let i = 0; i < snake.length; i++) {
+            // Effet de néon pour le serpent
+            ctx.shadowBlur = (i === 0) ? 15 : 0;
+            ctx.shadowColor = "#2ecc71";
+            
             ctx.fillStyle = (i == 0) ? "#2ecc71" : "#27ae60";
             ctx.beginPath();
-            ctx.arc(snake[i].x + box/2, snake[i].y + box/2, box/2 - 2, 0, 2 * Math.PI);
+            ctx.roundRect(snake[i].x + 1, snake[i].y + 1, box - 2, box - 2, 6);
             ctx.fill();
             
-            if(i == 0) {
+            if(i == 0) { // Yeux
                 ctx.fillStyle = "white";
-                ctx.beginPath(); ctx.arc(snake[i].x + 6, snake[i].y + 6, 3, 0, 2*Math.PI); ctx.fill();
-                ctx.beginPath(); ctx.arc(snake[i].x + 14, snake[i].y + 6, 3, 0, 2*Math.PI); ctx.fill();
+                ctx.beginPath(); ctx.arc(snake[i].x + 6, snake[i].y + 7, 3, 0, 2*Math.PI); ctx.fill();
+                ctx.beginPath(); ctx.arc(snake[i].x + 14, snake[i].y + 7, 3, 0, 2*Math.PI); ctx.fill();
             }
+            ctx.shadowBlur = 0;
         }
 
         drawMika(food.x, food.y);
@@ -88,7 +115,7 @@ game_code = """
         if(snakeX == food.x && snakeY == food.y) {
             score++;
             scoreElement.innerHTML = score;
-            food = {x: Math.floor(Math.random()*15 + 1)*box, y: Math.floor(Math.random()*15 + 1)*box};
+            food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
         } else {
             snake.pop();
         }
@@ -97,7 +124,6 @@ game_code = """
 
         if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
             clearInterval(game);
-            // Message personnalisé ici
             alert("Khrat 3lik papaya !");
             location.reload();
         }
@@ -112,8 +138,8 @@ game_code = """
         return false;
     }
 
-    let game = setInterval(draw, 120);
+    let game = setInterval(draw, 110);
 </script>
 """
 
-components.html(game_code, height=750)
+components.html(game_code, height=850)
