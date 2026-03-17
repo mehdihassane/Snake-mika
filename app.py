@@ -36,13 +36,13 @@ game_code = """
     
     <canvas id="snakeGame" tabindex="0" style="border:4px solid #3498db; border-radius:15px; background:#24344d; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1; outline: none;"></canvas>
     
-    <div style="margin-top:20px; display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; width:210px; margin-left:auto; margin-right:auto;">
+    <div style="margin-top:5px; display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; width:210px; margin-left:auto; margin-right:auto;">
         <div></div>
-        <button onpointerdown="changeDir('UP'); event.preventDefault();" style="height:65px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9; cursor:pointer; touch-action: manipulation;">⬆️</button>
+        <button onpointerdown="changeDir('UP'); event.preventDefault();" style="height:58px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9; cursor:pointer; touch-action: manipulation;">⬆️</button>
         <div></div>
-        <button onpointerdown="changeDir('LEFT'); event.preventDefault();" style="height:65px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9; cursor:pointer; touch-action: manipulation;">⬅️</button>
-        <button onpointerdown="changeDir('DOWN'); event.preventDefault();" style="height:65px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9; cursor:pointer; touch-action: manipulation;">⬇️</button>
-        <button onpointerdown="changeDir('RIGHT'); event.preventDefault();" style="height:65px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9; cursor:pointer; touch-action: manipulation;">➡️</button>
+        <button onpointerdown="changeDir('LEFT'); event.preventDefault();" style="height:58px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9; cursor:pointer; touch-action: manipulation;">⬅️</button>
+        <button onpointerdown="changeDir('DOWN'); event.preventDefault();" style="height:58px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9; cursor:pointer; touch-action: manipulation;">⬇️</button>
+        <button onpointerdown="changeDir('RIGHT'); event.preventDefault();" style="height:58px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9; cursor:pointer; touch-action: manipulation;">➡️</button>
     </div>
 </div>
 
@@ -62,9 +62,8 @@ game_code = """
     let gameLoop; 
     let boubalou = [];
     let boubalouTick; 
-    let currentMode = 'solo'; // Pour savoir à quoi on joue
+    let currentMode = 'solo'; 
 
-    // --- FONCTIONS DE MENU ---
     function showMenu() {
         document.getElementById("game-over-screen").style.display = "none";
         document.getElementById("start-screen").style.display = "flex";
@@ -73,7 +72,6 @@ game_code = """
     function startGame(mode) {
         currentMode = mode;
         
-        // Réinitialisation des stats
         score = 0;
         scoreElement.innerHTML = score;
         snake = [{x: 10 * box, y: 10 * box}, {x: 9 * box, y: 10 * box}];
@@ -83,7 +81,6 @@ game_code = """
         boubalouTick = 0;
         boubalou = [];
 
-        // Gestion du badge en haut à droite
         let modeBadge = document.getElementById("mode-badge");
 
         if (currentMode === 'boubalou') {
@@ -97,11 +94,9 @@ game_code = """
             modeBadge.style.borderColor = "#2ecc71";
         }
 
-        // Cache les menus
         document.getElementById("start-screen").style.display = "none";
         document.getElementById("game-over-screen").style.display = "none";
 
-        // Lance le jeu
         canvas.focus();
         if(gameLoop) clearInterval(gameLoop);
         gameLoop = setInterval(draw, 150);
@@ -263,7 +258,6 @@ game_code = """
         ctx.fillStyle = "#24344d"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Boubalou ne bouge que s'il est actif
         if (currentMode === 'boubalou') {
             boubalouTick++;
             if (boubalouTick % 2 === 0) {
@@ -280,39 +274,31 @@ game_code = """
 
         let newHead = {x: snakeX, y: snakeY};
 
-        // 1. Tu meurs si tu touches un mur
         if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height) {
             gameOver("dkholti f7itt a papaya");
             return;
         }
 
-        // 2. Tu meurs si tu touches ton propre corps
         if(collision(newHead, snake)) {
             gameOver("Khrat 3lik papaya !");
             return;
         }
 
-        // Règles spécifiques au mode Boubalou
         if (currentMode === 'boubalou') {
-            // 3. Tu meurs si TU rentres dans Boubalou
             if(collision(newHead, boubalou)) {
                 gameOver("dkholti fboubalou a papaya hhhh");
                 return;
             }
-
-            // 4. Boubalou meurt s'il TE rentre dedans
             if(boubalou.length > 0 && collision(boubalou[0], snake)) {
                 respawnBoubalou();
             }
         }
 
-        // Tu manges la Mika K7la
         if(snakeX == food.x && snakeY == food.y) {
             score++;
             scoreElement.innerHTML = score;
             food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
             
-            // Boubalou grandit avec toi uniquement dans son mode
             if (currentMode === 'boubalou' && boubalou.length > 0) {
                 boubalou.push({x: boubalou[boubalou.length - 1].x, y: boubalou[boubalou.length - 1].y});
             }
@@ -323,7 +309,6 @@ game_code = """
 
         snake.unshift(newHead);
 
-        // Dessin
         for(let i = 0; i < snake.length; i++) {
             drawMinionSegment(snake[i].x, snake[i].y, i === 0);
         }
@@ -343,8 +328,6 @@ game_code = """
         }
         return false;
     }
-
-    // Le jeu ne se lance plus tout seul ici ! Il attend que tu cliques sur le menu.
 </script>
 """
 
