@@ -55,17 +55,15 @@ game_code = """
     let gameLoop; 
 
     // ---- VARIABLES BOUBALOU ----
-    // Il commence avec la même taille que toi (2 segments)
     let boubalou = [{x: 19 * box, y: 19 * box}, {x: 19 * box, y: 19 * box}];
     let boubalouTick = 0; 
 
-    // Fonction pour faire réapparaître Boubalou dans un coin
     function respawnBoubalou() {
         const corners = [
-            {x: 0, y: 0},                 // Haut Gauche
-            {x: 19 * box, y: 0},          // Haut Droite
-            {x: 0, y: 19 * box},          // Bas Gauche
-            {x: 19 * box, y: 19 * box}    // Bas Droite
+            {x: 0, y: 0},                 
+            {x: 19 * box, y: 0},          
+            {x: 0, y: 19 * box},          
+            {x: 19 * box, y: 19 * box}    
         ];
         
         let validCorners = corners.filter(c => !collision(c, snake));
@@ -73,7 +71,6 @@ game_code = """
 
         let corner = validCorners[Math.floor(Math.random() * validCorners.length)];
 
-        // NOUVEAU : Il réapparaît avec la même longueur que ton Minion actuel
         boubalou = [];
         for(let i = 0; i < snake.length; i++) {
             boubalou.push({x: corner.x, y: corner.y});
@@ -231,31 +228,40 @@ game_code = """
 
         let newHead = {x: snakeX, y: snakeY};
 
-        // 1. Tu meurs si tu touches un mur ou ton propre corps
-        if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
-            gameOver("Khrat 3lik papaya !");
+        // ==========================================
+        // RÈGLES DE MORT SÉPARÉES AVEC MESSAGES
+        // ==========================================
+
+        // 1. Tu meurs si tu touches un mur
+        if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height) {
+            gameOver("dkholti f7itt a papaya");
             return;
         }
 
-        // 2. Tu meurs si TU rentres dans Boubalou
+        // 2. Tu meurs si tu touches ton propre corps
+        if(collision(newHead, snake)) {
+            gameOver("Khrat 3lik papaya !"); // Tu peux changer ce message aussi si tu veux !
+            return;
+        }
+
+        // 3. Tu meurs si TU rentres dans Boubalou
         if(collision(newHead, boubalou)) {
-            gameOver("Tu as foncé sur Boubalou !");
+            gameOver("dkholti fboubalou a papaya hhhh");
             return;
         }
 
-        // 3. Boubalou meurt s'il TE rentre dedans
+        // 4. Boubalou meurt s'il TE rentre dedans
         if(collision(boubalou[0], snake)) {
             respawnBoubalou();
         }
 
-        // 4. Tu manges la Mika K7la
+        // ==========================================
+
         if(snakeX == food.x && snakeY == food.y) {
             score++;
             scoreElement.innerHTML = score;
             food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
             
-            // NOUVEAU : Boubalou grandit en même temps que toi !
-            // On duplique simplement son dernier segment pour qu'il s'allonge au prochain tour
             boubalou.push({x: boubalou[boubalou.length - 1].x, y: boubalou[boubalou.length - 1].y});
             
         } else {
