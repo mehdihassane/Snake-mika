@@ -20,7 +20,7 @@ game_code = """
     <div id="game-over-screen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255, 0, 0, 0.9); z-index:10; border-radius:20px; flex-direction:column; justify-content:center; align-items:center;">
         <h1 style="color:white; font-size:40px; text-shadow: 0 0 20px black;">BOOM !</h1>
         <p style="color:white; font-size:24px; font-weight:bold; margin-bottom:20px;">Khrat 3lik papaya !</p>
-        <button onclick="location.reload()" style="padding:15px 30px; font-size:20px; background:white; color:red; border:none; border-radius:50px; font-weight:bold;">REESSAYER 🔄</button>
+        <button onpointerdown="location.reload()" style="padding:15px 30px; font-size:20px; background:white; color:red; border:none; border-radius:50px; font-weight:bold; cursor:pointer;">REESSAYER 🔄</button>
     </div>
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -31,10 +31,12 @@ game_code = """
     <canvas id="snakeGame" tabindex="0" style="border:4px solid #3498db; border-radius:15px; background:#24344d; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1; outline: none;"></canvas>
     
     <div style="margin-top:20px; display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; width:210px; margin-left:auto; margin-right:auto;">
-        <div></div><button onclick="changeDir('UP')" style="height:65px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9;">⬆️</button><div></div>
-        <button onclick="changeDir('LEFT')" style="height:65px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9;">⬅️</button>
-        <button onclick="changeDir('DOWN')" style="height:65px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9;">⬇️</button>
-        <button onclick="changeDir('RIGHT')" style="height:65px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9;">➡️</button>
+        <div></div>
+        <button onpointerdown="changeDir('UP'); event.preventDefault();" style="height:65px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9; cursor:pointer; touch-action: manipulation;">⬆️</button>
+        <div></div>
+        <button onpointerdown="changeDir('LEFT'); event.preventDefault();" style="height:65px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9; cursor:pointer; touch-action: manipulation;">⬅️</button>
+        <button onpointerdown="changeDir('DOWN'); event.preventDefault();" style="height:65px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9; cursor:pointer; touch-action: manipulation;">⬇️</button>
+        <button onpointerdown="changeDir('RIGHT'); event.preventDefault();" style="height:65px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9; cursor:pointer; touch-action: manipulation;">➡️</button>
     </div>
 </div>
 
@@ -50,7 +52,7 @@ game_code = """
     let food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
     let d = "RIGHT";
     let changingDirection = false;
-    let gameLoop; // Déclaré globalement pour pouvoir le réinitialiser
+    let gameLoop; 
 
     canvas.focus();
 
@@ -69,7 +71,6 @@ game_code = """
 
         let directionChanged = false;
 
-        // On vérifie aussi qu'on ne spamme pas la même direction
         if(dir == "UP" && d != "DOWN" && d != "UP") { d = "UP"; directionChanged = true; }
         if(dir == "DOWN" && d != "UP" && d != "DOWN") { d = "DOWN"; directionChanged = true; }
         if(dir == "LEFT" && d != "RIGHT" && d != "LEFT") { d = "LEFT"; directionChanged = true; }
@@ -77,10 +78,8 @@ game_code = """
 
         if (directionChanged) {
             changingDirection = true;
-            // Magie ici : On force le dessin IMMÉDIAT du nouveau mouvement
             clearInterval(gameLoop);
             draw(); 
-            // Puis on relance le rythme normal de 150ms
             gameLoop = setInterval(draw, 150);
         }
     }
@@ -157,7 +156,6 @@ game_code = """
         return false;
     }
 
-    // On remet la vitesse de base à 150ms
     gameLoop = setInterval(draw, 150);
 </script>
 """
