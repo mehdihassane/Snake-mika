@@ -28,7 +28,7 @@ game_code = """
         <div style="font-size:16px; color:#00d2ff; font-weight:bold; border:1px solid #00d2ff; padding:2px 8px; border-radius:8px;">Mode: Minion</div>
     </div>
     
-    <canvas id="snakeGame" style="border:4px solid #3498db; border-radius:15px; background:#24344d; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1;"></canvas>
+    <canvas id="snakeGame" tabindex="0" style="border:4px solid #3498db; border-radius:15px; background:#24344d; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1; outline: none;"></canvas>
     
     <div style="margin-top:20px; display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; width:210px; margin-left:auto; margin-right:auto;">
         <div></div><button onclick="changeDir('UP')" style="height:65px; border-radius:18px; background:#3498db; color:white; border:none; font-size:26px; box-shadow: 0 4px #2980b9;">⬆️</button><div></div>
@@ -49,12 +49,29 @@ game_code = """
     let snake = [{x: 10 * box, y: 10 * box}, {x: 9 * box, y: 10 * box}];
     let food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
     let d = "RIGHT";
+    let changingDirection = false;
+
+    // Focus automatique sur le jeu pour pouvoir utiliser le clavier de suite
+    canvas.focus();
+
+    // Gestion du clavier + annulation du scroll de la page avec les flèches
+    canvas.addEventListener("keydown", function(event) {
+        if([37, 38, 39, 40].indexOf(event.keyCode) > -1) {
+            event.preventDefault(); // Bloque le scroll
+        }
+        if(event.keyCode == 37) changeDir("LEFT");
+        if(event.keyCode == 38) changeDir("UP");
+        if(event.keyCode == 39) changeDir("RIGHT");
+        if(event.keyCode == 40) changeDir("DOWN");
+    });
 
     function changeDir(dir) {
-        if(dir == "UP" && d != "DOWN") d = "UP";
-        if(dir == "DOWN" && d != "UP") d = "DOWN";
-        if(dir == "LEFT" && d != "RIGHT") d = "LEFT";
-        if(dir == "RIGHT" && d != "LEFT") d = "RIGHT";
+        if (changingDirection) return;
+
+        if(dir == "UP" && d != "DOWN") { d = "UP"; changingDirection = true; }
+        if(dir == "DOWN" && d != "UP") { d = "DOWN"; changingDirection = true; }
+        if(dir == "LEFT" && d != "RIGHT") { d = "LEFT"; changingDirection = true; }
+        if(dir == "RIGHT" && d != "LEFT") { d = "RIGHT"; changingDirection = true; }
     }
 
     function drawMinionSegment(x, y, isHead) {
@@ -64,15 +81,14 @@ game_code = """
         ctx.roundRect(x + 1, y + 1, box - 2, box - 2, 8);
         ctx.fill();
 
-        // Salopette Bleue (bas du segment)
+        // Salopette Bleue
         ctx.fillStyle = "#3498db";
         ctx.fillRect(x + 1, y + 12, box - 2, 7);
 
         if(isHead) {
-            // Bandeau lunette noir
+            // Lunettes et oeil
             ctx.fillStyle = "#333";
             ctx.fillRect(x + 1, y + 6, box - 2, 4);
-            // L'oeil (Minion Cyclope)
             ctx.fillStyle = "white";
             ctx.beginPath(); ctx.arc(x + 10, y + 8, 5, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = "#795548"; // Iris
@@ -91,6 +107,8 @@ game_code = """
     }
 
     function draw() {
+        changingDirection = false; // Réinitialise la possibilité de tourner
+
         ctx.fillStyle = "#24344d"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -131,7 +149,8 @@ game_code = """
         return false;
     }
 
-    let gameLoop = setInterval(draw, 150);
+    // Boucle à 100ms pour plus de nervosité
+    let gameLoop = setInterval(draw, 100);
 </script>
 """
 
