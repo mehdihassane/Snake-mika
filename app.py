@@ -19,13 +19,13 @@ game_code = """
     
     <div id="game-over-screen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255, 0, 0, 0.9); z-index:10; border-radius:20px; flex-direction:column; justify-content:center; align-items:center;">
         <h1 style="color:white; font-size:40px; text-shadow: 0 0 20px black;">BOOM !</h1>
-        <p style="color:white; font-size:24px; font-weight:bold; margin-bottom:20px;">Khrat 3lik papaya !</p>
+        <p style="color:white; font-size:24px; font-weight:bold; margin-bottom:20px;">Boubalou t'a eu !</p>
         <button onpointerdown="location.reload()" style="padding:15px 30px; font-size:20px; background:white; color:red; border:none; border-radius:50px; font-weight:bold; cursor:pointer;">REESSAYER 🔄</button>
     </div>
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <div style="font-size:22px; color:#f1c40f; font-weight:bold;">Mika K7la : <span id="score" style="color:white;">0</span></div>
-        <div style="font-size:16px; color:#00d2ff; font-weight:bold; border:1px solid #00d2ff; padding:2px 8px; border-radius:8px;">Mode: Minion</div>
+        <div style="font-size:16px; color:#9b59b6; font-weight:bold; border:1px solid #9b59b6; padding:2px 8px; border-radius:8px;">VS Boubalou</div>
     </div>
     
     <canvas id="snakeGame" tabindex="0" style="border:4px solid #3498db; border-radius:15px; background:#24344d; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1; outline: none;"></canvas>
@@ -53,6 +53,10 @@ game_code = """
     let d = "RIGHT";
     let changingDirection = false;
     let gameLoop; 
+
+    // ---- VARIABLES BOUBALOU ----
+    let boubalou = [{x: 18 * box, y: 18 * box}, {x: 19 * box, y: 18 * box}, {x: 19 * box, y: 19 * box}];
+    let boubalouTick = 0; // Pour qu'il avance moins vite que toi
 
     canvas.focus();
 
@@ -85,12 +89,12 @@ game_code = """
     }
 
     function drawMinionSegment(x, y, isHead) {
-        ctx.fillStyle = "#f1c40f";
+        ctx.fillStyle = "#f1c40f"; // Jaune normal
         ctx.beginPath();
         ctx.roundRect(x + 1, y + 1, box - 2, box - 2, 8);
         ctx.fill();
 
-        ctx.fillStyle = "#3498db";
+        ctx.fillStyle = "#3498db"; // Salopette bleue
         ctx.fillRect(x + 1, y + 12, box - 2, 7);
 
         if(isHead) {
@@ -105,6 +109,28 @@ game_code = """
         }
     }
 
+    // ---- FONCTION POUR DESSINER BOUBALOU ----
+    function drawBoubalouSegment(x, y, isHead) {
+        ctx.fillStyle = "#8e44ad"; // Minion Violet (Méchant)
+        ctx.beginPath();
+        ctx.roundRect(x + 1, y + 1, box - 2, box - 2, 8);
+        ctx.fill();
+
+        ctx.fillStyle = "#2c3e50"; // Salopette noire
+        ctx.fillRect(x + 1, y + 12, box - 2, 7);
+
+        if(isHead) {
+            ctx.fillStyle = "#333";
+            ctx.fillRect(x + 1, y + 6, box - 2, 4);
+            ctx.fillStyle = "white";
+            ctx.beginPath(); ctx.arc(x + 10, y + 8, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#e74c3c"; // Oeil rouge terrifiant
+            ctx.beginPath(); ctx.arc(x + 10, y + 8, 2, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "black"; 
+            ctx.beginPath(); ctx.arc(x + 10, y + 8, 1, 0, Math.PI * 2); ctx.fill();
+        }
+    }
+
     function drawMika(x, y) {
         ctx.shadowBlur = 15; ctx.shadowColor = "white";
         ctx.fillStyle = "#000000";
@@ -113,14 +139,66 @@ game_code = """
         ctx.shadowBlur = 0;
     }
 
+    // ---- IA DE BOUBALOU ----
+    function moveBoubalou() {
+        let bx = boubalou[0].x;
+        let by = boubalou[0].y;
+        let px = snake[0].x;
+        let py = snake[0].y;
+
+        // Les 4 directions possibles
+        let moves = [
+            {x: bx, y: by - box}, // HAUT
+            {x: bx, y: by + box}, // BAS
+            {x: bx - box, y: by}, // GAUCHE
+            {x: bx + box, y: by}  // DROITE
+        ];
+
+        // 1. On filtre les mouvements impossibles (murs ou son propre corps)
+        let validMoves = moves.filter(m => {
+            if (m.x < 0 || m.x >= canvas.width || m.y < 0 || m.y >= canvas.height) return false;
+            for (let i = 0; i < boubalou.length - 1; i++) {
+                if (m.x === boubalou[i].x && m.y === boubalou[i].y) return false;
+            }
+            return true;
+        });
+
+        if (validMoves.length === 0) return; // Boubalou est coincé, il passe son tour
+
+        // 2. On calcule la distance vers ton Minion pour chaque mouvement
+        validMoves.forEach(m => {
+            m.dist = Math.abs(m.x - px) + Math.abs(m.y - py);
+        });
+
+        // 3. On trie pour trouver le mouvement qui le rapproche le plus
+        validMoves.sort((a, b) => a.dist - b.dist);
+
+        let chosenMove;
+        // 60% de chance d'être intelligent et de te traquer, 40% de bouger au hasard
+        if (Math.random() < 0.6) {
+            chosenMove = validMoves[0];
+        } else {
+            chosenMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+        }
+
+        boubalou.pop(); // Il avance, donc on supprime sa queue
+        boubalou.unshift({x: chosenMove.x, y: chosenMove.y}); // On ajoute sa nouvelle tête
+    }
+
     function draw() {
         changingDirection = false; 
 
         ctx.fillStyle = "#24344d"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Dessiner ton Minion
         for(let i = 0; i < snake.length; i++) {
             drawMinionSegment(snake[i].x, snake[i].y, i === 0);
+        }
+
+        // Dessiner Boubalou
+        for(let i = 0; i < boubalou.length; i++) {
+            drawBoubalouSegment(boubalou[i].x, boubalou[i].y, i === 0);
         }
 
         drawMika(food.x, food.y);
@@ -141,12 +219,36 @@ game_code = """
         }
 
         let newHead = {x: snakeX, y: snakeY};
+
+        // GESTION DU GAME OVER
+        let isDead = false;
+        
+        // 1. Murs ou toi-même
         if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
+            isDead = true;
+        }
+        // 2. Tu as percuté Boubalou
+        if(collision(newHead, boubalou)) {
+            isDead = true;
+        }
+        // 3. Boubalou t'a mordu la queue ou le corps
+        if(collision(boubalou[0], snake)) {
+            isDead = true;
+        }
+
+        if(isDead) {
             clearInterval(gameLoop);
             document.getElementById("game-over-screen").style.display = "flex";
             return;
         }
+        
         snake.unshift(newHead);
+
+        // Boubalou bouge une fois sur deux (pour ne pas être trop dur)
+        boubalouTick++;
+        if (boubalouTick % 2 === 0) {
+            moveBoubalou();
+        }
     }
 
     function collision(head, array) {
