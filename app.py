@@ -17,15 +17,21 @@ st.markdown("<h1 style='text-align: center; color: #f1c40f; font-family: sans-se
 game_code = """
 <div id="game-container" style="position:relative; text-align:center; font-family: sans-serif; background: #1a1a2e; padding: 15px; border-radius: 20px;">
     
+    <div id="start-screen" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(26, 26, 46, 0.95); z-index:20; border-radius:20px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <h1 style="color:#f1c40f; font-size:32px; text-shadow: 2px 2px #3498db; margin-bottom: 30px;">CHOISIS TON MODE</h1>
+        <button onpointerdown="startGame('solo')" style="margin-bottom: 15px; padding:15px 30px; font-size:20px; background:#2ecc71; color:white; border:none; border-radius:15px; font-weight:bold; cursor:pointer; width: 220px; box-shadow: 0 4px #27ae60;">Mode Seul 🐍</button>
+        <button onpointerdown="startGame('boubalou')" style="padding:15px 30px; font-size:20px; background:#9b59b6; color:white; border:none; border-radius:15px; font-weight:bold; cursor:pointer; width: 220px; box-shadow: 0 4px #8e44ad;">VS Boubalou 😈</button>
+    </div>
+
     <div id="game-over-screen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255, 0, 0, 0.9); z-index:10; border-radius:20px; flex-direction:column; justify-content:center; align-items:center;">
         <h1 style="color:white; font-size:40px; text-shadow: 0 0 20px black;">BOOM !</h1>
         <p id="game-over-text" style="color:white; font-size:24px; font-weight:bold; margin-bottom:20px;">Khrat 3lik papaya !</p>
-        <button onpointerdown="location.reload()" style="padding:15px 30px; font-size:20px; background:white; color:red; border:none; border-radius:50px; font-weight:bold; cursor:pointer;">REESSAYER 🔄</button>
+        <button onpointerdown="showMenu()" style="padding:15px 30px; font-size:20px; background:white; color:red; border:none; border-radius:50px; font-weight:bold; cursor:pointer;">RETOUR MENU 🔄</button>
     </div>
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <div style="font-size:22px; color:#f1c40f; font-weight:bold;">Mika K7la : <span id="score" style="color:white;">0</span></div>
-        <div style="font-size:16px; color:#9b59b6; font-weight:bold; border:1px solid #9b59b6; padding:2px 8px; border-radius:8px;">VS Boubalou</div>
+        <div id="mode-badge" style="font-size:16px; color:#2ecc71; font-weight:bold; border:1px solid #2ecc71; padding:2px 8px; border-radius:8px;">Mode Seul</div>
     </div>
     
     <canvas id="snakeGame" tabindex="0" style="border:4px solid #3498db; border-radius:15px; background:#24344d; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1; outline: none;"></canvas>
@@ -47,16 +53,59 @@ game_code = """
     canvas.width = 400; canvas.height = 400;
     const box = 20;
     
-    let score = 0;
-    let snake = [{x: 10 * box, y: 10 * box}, {x: 9 * box, y: 10 * box}];
-    let food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
-    let d = "RIGHT";
-    let changingDirection = false;
+    // Variables globales
+    let score;
+    let snake;
+    let food;
+    let d;
+    let changingDirection;
     let gameLoop; 
+    let boubalou = [];
+    let boubalouTick; 
+    let currentMode = 'solo'; // Pour savoir à quoi on joue
 
-    // ---- VARIABLES BOUBALOU ----
-    let boubalou = [{x: 19 * box, y: 19 * box}, {x: 19 * box, y: 19 * box}];
-    let boubalouTick = 0; 
+    // --- FONCTIONS DE MENU ---
+    function showMenu() {
+        document.getElementById("game-over-screen").style.display = "none";
+        document.getElementById("start-screen").style.display = "flex";
+    }
+
+    function startGame(mode) {
+        currentMode = mode;
+        
+        // Réinitialisation des stats
+        score = 0;
+        scoreElement.innerHTML = score;
+        snake = [{x: 10 * box, y: 10 * box}, {x: 9 * box, y: 10 * box}];
+        food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
+        d = "RIGHT";
+        changingDirection = false;
+        boubalouTick = 0;
+        boubalou = [];
+
+        // Gestion du badge en haut à droite
+        let modeBadge = document.getElementById("mode-badge");
+
+        if (currentMode === 'boubalou') {
+            boubalou = [{x: 19 * box, y: 19 * box}, {x: 19 * box, y: 19 * box}];
+            modeBadge.innerText = "VS Boubalou";
+            modeBadge.style.color = "#9b59b6";
+            modeBadge.style.borderColor = "#9b59b6";
+        } else {
+            modeBadge.innerText = "Mode Seul";
+            modeBadge.style.color = "#2ecc71";
+            modeBadge.style.borderColor = "#2ecc71";
+        }
+
+        // Cache les menus
+        document.getElementById("start-screen").style.display = "none";
+        document.getElementById("game-over-screen").style.display = "none";
+
+        // Lance le jeu
+        canvas.focus();
+        if(gameLoop) clearInterval(gameLoop);
+        gameLoop = setInterval(draw, 150);
+    }
 
     function respawnBoubalou() {
         const corners = [
@@ -76,8 +125,6 @@ game_code = """
             boubalou.push({x: corner.x, y: corner.y});
         }
     }
-
-    canvas.focus();
 
     canvas.addEventListener("keydown", function(event) {
         if([37, 38, 39, 40].indexOf(event.keyCode) > -1) {
@@ -163,6 +210,8 @@ game_code = """
     }
 
     function moveBoubalou() {
+        if(boubalou.length === 0) return;
+
         let bx = boubalou[0].x;
         let by = boubalou[0].y;
         let px = snake[0].x;
@@ -214,9 +263,12 @@ game_code = """
         ctx.fillStyle = "#24344d"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        boubalouTick++;
-        if (boubalouTick % 2 === 0) {
-            moveBoubalou();
+        // Boubalou ne bouge que s'il est actif
+        if (currentMode === 'boubalou') {
+            boubalouTick++;
+            if (boubalouTick % 2 === 0) {
+                moveBoubalou();
+            }
         }
 
         let snakeX = snake[0].x;
@@ -228,10 +280,6 @@ game_code = """
 
         let newHead = {x: snakeX, y: snakeY};
 
-        // ==========================================
-        // RÈGLES DE MORT SÉPARÉES AVEC MESSAGES
-        // ==========================================
-
         // 1. Tu meurs si tu touches un mur
         if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height) {
             gameOver("dkholti f7itt a papaya");
@@ -240,29 +288,34 @@ game_code = """
 
         // 2. Tu meurs si tu touches ton propre corps
         if(collision(newHead, snake)) {
-            gameOver("Khrat 3lik papaya !"); // Tu peux changer ce message aussi si tu veux !
+            gameOver("Khrat 3lik papaya !");
             return;
         }
 
-        // 3. Tu meurs si TU rentres dans Boubalou
-        if(collision(newHead, boubalou)) {
-            gameOver("dkholti fboubalou a papaya hhhh");
-            return;
+        // Règles spécifiques au mode Boubalou
+        if (currentMode === 'boubalou') {
+            // 3. Tu meurs si TU rentres dans Boubalou
+            if(collision(newHead, boubalou)) {
+                gameOver("dkholti fboubalou a papaya hhhh");
+                return;
+            }
+
+            // 4. Boubalou meurt s'il TE rentre dedans
+            if(boubalou.length > 0 && collision(boubalou[0], snake)) {
+                respawnBoubalou();
+            }
         }
 
-        // 4. Boubalou meurt s'il TE rentre dedans
-        if(collision(boubalou[0], snake)) {
-            respawnBoubalou();
-        }
-
-        // ==========================================
-
+        // Tu manges la Mika K7la
         if(snakeX == food.x && snakeY == food.y) {
             score++;
             scoreElement.innerHTML = score;
             food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
             
-            boubalou.push({x: boubalou[boubalou.length - 1].x, y: boubalou[boubalou.length - 1].y});
+            // Boubalou grandit avec toi uniquement dans son mode
+            if (currentMode === 'boubalou' && boubalou.length > 0) {
+                boubalou.push({x: boubalou[boubalou.length - 1].x, y: boubalou[boubalou.length - 1].y});
+            }
             
         } else {
             snake.pop();
@@ -270,12 +323,15 @@ game_code = """
 
         snake.unshift(newHead);
 
+        // Dessin
         for(let i = 0; i < snake.length; i++) {
             drawMinionSegment(snake[i].x, snake[i].y, i === 0);
         }
 
-        for(let i = 0; i < boubalou.length; i++) {
-            drawBoubalouSegment(boubalou[i].x, boubalou[i].y, i === 0);
+        if (currentMode === 'boubalou') {
+            for(let i = 0; i < boubalou.length; i++) {
+                drawBoubalouSegment(boubalou[i].x, boubalou[i].y, i === 0);
+            }
         }
 
         drawMika(food.x, food.y);
@@ -288,7 +344,7 @@ game_code = """
         return false;
     }
 
-    gameLoop = setInterval(draw, 150);
+    // Le jeu ne se lance plus tout seul ici ! Il attend que tu cliques sur le menu.
 </script>
 """
 
