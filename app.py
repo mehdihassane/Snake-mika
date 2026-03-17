@@ -34,7 +34,7 @@ game_code = """
         <div id="mode-badge" style="font-size:16px; color:#2ecc71; font-weight:bold; border:1px solid #2ecc71; padding:2px 8px; border-radius:8px;">Mode Seul</div>
     </div>
     
-    <canvas id="snakeGame" tabindex="0" style="border:4px solid #3498db; border-radius:15px; background:#24344d; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1; outline: none;"></canvas>
+    <canvas id="snakeGame" tabindex="0" style="border:4px solid #3498db; border-radius:15px; background:#24344d; touch-action:none; width: 95%; max-width: 350px; aspect-ratio: 1/1; outline: none; transition: transform 0.05s ease-in-out;"></canvas>
     
     <div style="margin-top:5px; display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; width:210px; margin-left:auto; margin-right:auto;">
         <div></div>
@@ -95,7 +95,6 @@ game_code = """
             modeBadge.style.borderColor = "#2ecc71";
         }
 
-        // 2 bombes au lieu de 3
         for(let i = 0; i < 2; i++) {
             let bx, by, isSafe;
             do {
@@ -293,24 +292,74 @@ game_code = """
         document.getElementById("game-over-screen").style.display = "flex";
     }
 
+    // --- NOUVELLE ANIMATION D'EXPLOSION EPIC ---
     function triggerExplosion(x, y, message) {
         clearInterval(gameLoop); 
-        let radius = 0;
-        let explosionLoop = setInterval(() => {
-            radius += 4;
-            
-            ctx.fillStyle = "rgba(231, 76, 60, 0.4)"; 
-            ctx.beginPath();
-            ctx.arc(x + box/2, y + box/2, radius, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.fillStyle = "rgba(241, 196, 15, 0.7)"; 
-            ctx.beginPath();
-            ctx.arc(x + box/2, y + box/2, radius * 0.6, 0, Math.PI * 2);
-            ctx.fill();
+        let frame = 0;
+        let particles = [];
+        let colors = ["#e74c3c", "#f1c40f", "#e67e22", "#ffffff"]; // Rouge, jaune, orange, blanc
 
-            if (radius > box * 5) {
+        // Générer 40 particules d'étincelles
+        for(let i=0; i<40; i++) {
+            let angle = Math.random() * Math.PI * 2;
+            let speed = Math.random() * 6 + 2;
+            particles.push({
+                x: x + box/2,
+                y: y + box/2,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                radius: Math.random() * 4 + 2,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                alpha: 1
+            });
+        }
+
+        let explosionLoop = setInterval(() => {
+            frame++;
+            
+            // 1. Screen Shake ! (On fait trembler le canvas)
+            if (frame < 15) {
+                let shakeX = (Math.random() - 0.5) * 15;
+                let shakeY = (Math.random() - 0.5) * 15;
+                canvas.style.transform = `translate(${shakeX}px, ${shakeY}px)`;
+            } else {
+                canvas.style.transform = `translate(0px, 0px)`;
+            }
+
+            // 2. Fondu noir progressif sur tout le jeu
+            ctx.fillStyle = "rgba(26, 26, 46, 0.25)"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 3. Onde de choc (anneau de feu)
+            if (frame < 20) {
+                ctx.strokeStyle = `rgba(241, 196, 15, ${1 - frame/20})`;
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.arc(x + box/2, y + box/2, frame * 8, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // 4. Mouvement des particules
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2; // Ajout de gravité pour qu'elles retombent
+                p.alpha -= 0.025; 
+                
+                if (p.alpha > 0) {
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            ctx.globalAlpha = 1.0; 
+
+            // Fin de l'animation après ~1.3 secondes
+            if (frame > 45) {
                 clearInterval(explosionLoop);
+                canvas.style.transform = `translate(0px, 0px)`;
                 gameOver(message);
             }
         }, 30); 
