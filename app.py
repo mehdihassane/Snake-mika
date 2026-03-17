@@ -53,10 +53,10 @@ game_code = """
     canvas.width = 400; canvas.height = 400;
     const box = 20;
     
-    // Variables globales
     let score;
     let snake;
     let food;
+    let bombs = []; // NOUVEAU : Tableau des bombes
     let d;
     let changingDirection;
     let gameLoop; 
@@ -80,6 +80,7 @@ game_code = """
         changingDirection = false;
         boubalouTick = 0;
         boubalou = [];
+        bombs = []; // Réinitialiser les bombes
 
         let modeBadge = document.getElementById("mode-badge");
 
@@ -92,6 +93,25 @@ game_code = """
             modeBadge.innerText = "Mode Seul";
             modeBadge.style.color = "#2ecc71";
             modeBadge.style.borderColor = "#2ecc71";
+        }
+
+        // NOUVEAU : Placer les 3 bombes aléatoirement (sans se superposer avec le reste)
+        for(let i = 0; i < 3; i++) {
+            let bx, by, isSafe;
+            do {
+                isSafe = true;
+                bx = Math.floor(Math.random()*18 + 1)*box;
+                by = Math.floor(Math.random()*18 + 1)*box;
+                
+                // Vérifier que ça ne spawn pas sur la bouffe ou le joueur
+                if (bx === food.x && by === food.y) isSafe = false;
+                for(let s of snake) if(s.x === bx && s.y === by) isSafe = false;
+                for(let b of bombs) if(b.x === bx && b.y === by) isSafe = false;
+                if(currentMode === 'boubalou') {
+                    for(let bb of boubalou) if(bb.x === bx && bb.y === by) isSafe = false;
+                }
+            } while(!isSafe);
+            bombs.push({x: bx, y: by});
         }
 
         document.getElementById("start-screen").style.display = "none";
@@ -204,6 +224,26 @@ game_code = """
         ctx.shadowBlur = 0;
     }
 
+    // NOUVEAU : Fonction pour dessiner la bombe
+    function drawBomb(x, y) {
+        ctx.fillStyle = "#2c3e50"; // Corps noir/gris foncé
+        ctx.beginPath();
+        ctx.arc(x + box/2, y + box/2 + 2, box/2 - 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = "#95a5a6"; // Mèche
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + box/2, y + 5);
+        ctx.lineTo(x + box/2 + 5, y - 2);
+        ctx.stroke();
+
+        ctx.fillStyle = "#e74c3c"; // Etincelle (clignote un peu avec le refresh rate)
+        ctx.beginPath();
+        ctx.arc(x + box/2 + 5, y - 2, Math.random() * 2 + 1, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
     function moveBoubalou() {
         if(boubalou.length === 0) return;
 
@@ -223,6 +263,10 @@ game_code = """
             if (m.x < 0 || m.x >= canvas.width || m.y < 0 || m.y >= canvas.height) return false;
             for (let i = 0; i < boubalou.length - 1; i++) {
                 if (m.x === boubalou[i].x && m.y === boubalou[i].y) return false;
+            }
+            // Boubalou évite aussi les bombes !
+            for(let b of bombs) {
+                if(m.x === b.x && m.y === b.y) return false;
             }
             return true;
         });
@@ -252,11 +296,43 @@ game_code = """
         document.getElementById("game-over-screen").style.display = "flex";
     }
 
+    // NOUVEAU : Animation d'explosion
+    function triggerExplosion(x, y, message) {
+        clearInterval(gameLoop); // On stop tout de suite le mouvement
+        let radius = 0;
+        let explosionLoop = setInterval(() => {
+            radius += 4;
+            
+            // Halo rouge
+            ctx.fillStyle = "rgba(231, 76, 60, 0.4)"; 
+            ctx.beginPath();
+            ctx.arc(x + box/2, y + box/2, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Coeur jaune
+            ctx.fillStyle = "rgba(241, 196, 15, 0.7)"; 
+            ctx.beginPath();
+            ctx.arc(x + box/2, y + box/2, radius * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Fin de l'animation -> Affichage du Game Over
+            if (radius > box * 5) {
+                clearInterval(explosionLoop);
+                gameOver(message);
+            }
+        }, 30); // 30ms pour que ce soit fluide et rapide
+    }
+
     function draw() {
         changingDirection = false; 
 
         ctx.fillStyle = "#24344d"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Dessiner les bombes
+        for(let b of bombs) {
+            drawBomb(b.x, b.y);
+        }
 
         if (currentMode === 'boubalou') {
             boubalouTick++;
@@ -284,6 +360,15 @@ game_code = """
             return;
         }
 
+        // NOUVEAU : Tu touches une bombe
+        for(let b of bombs) {
+            if(newHead.x === b.x && newHead.y === b.y) {
+                // On déclenche l'animation au lieu du Game Over direct
+                triggerExplosion(b.x, b.y, "Tfarg3ti a papaya 💣");
+                return;
+            }
+        }
+
         if (currentMode === 'boubalou') {
             if(collision(newHead, boubalou)) {
                 gameOver("dkholti fboubalou a papaya hhhh");
@@ -299,6 +384,16 @@ game_code = """
             scoreElement.innerHTML = score;
             food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
             
+            // Sécurité : Vérifier que la nouvelle bouffe ne spawn pas sur une bombe
+            let safeFood = false;
+            while(!safeFood) {
+                safeFood = true;
+                for(let b of bombs) {
+                    if(food.x === b.x && food.y === b.y) safeFood = false;
+                }
+                if(!safeFood) food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
+            }
+
             if (currentMode === 'boubalou' && boubalou.length > 0) {
                 boubalou.push({x: boubalou[boubalou.length - 1].x, y: boubalou[boubalou.length - 1].y});
             }
