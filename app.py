@@ -24,7 +24,7 @@ game_code = """
     </div>
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <div style="font-size:22px; color:#f1c40f; font-weight:bold;">Mika K7la : <span id="score" style="color:white;">0</span></div>
+        <div style="font-size:22px; color:#f1c40f; font-weight:bold;">Score : <span id="score" style="color:white;">0</span></div>
         <div style="font-size:16px; color:#00d2ff; font-weight:bold; border:1px solid #00d2ff; padding:2px 8px; border-radius:8px;">Mode: Minion</div>
     </div>
     
@@ -49,10 +49,32 @@ game_code = """
     
     let score = 0;
     let snake = [{x: 10 * box, y: 10 * box}, {x: 9 * box, y: 10 * box}];
-    let food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
     let d = "RIGHT";
     let changingDirection = false;
+    
+    // Nouvelles variables pour gérer la vitesse dynamique
+    let currentSpeed = 150; 
     let gameLoop; 
+    let speedTimeout = null;
+
+    // Fonction pour générer la nourriture avec probabilités
+    function spawnFood() {
+        let rand = Math.random();
+        let fType = "normal";
+        if (rand > 0.85) {
+            fType = "rainbow"; // 15% de chance
+        } else if (rand > 0.70) {
+            fType = "red";     // 15% de chance
+        }
+        
+        return {
+            x: Math.floor(Math.random()*18 + 1)*box,
+            y: Math.floor(Math.random()*18 + 1)*box,
+            type: fType
+        };
+    }
+
+    let food = spawnFood();
 
     canvas.focus();
 
@@ -80,7 +102,8 @@ game_code = """
             changingDirection = true;
             clearInterval(gameLoop);
             draw(); 
-            gameLoop = setInterval(draw, 150);
+            // On relance avec currentSpeed au cas où on est sous l'effet du boost
+            gameLoop = setInterval(draw, currentSpeed);
         }
     }
 
@@ -105,11 +128,28 @@ game_code = """
         }
     }
 
-    function drawMika(x, y) {
-        ctx.shadowBlur = 15; ctx.shadowColor = "white";
-        ctx.fillStyle = "#000000";
-        ctx.beginPath(); ctx.roundRect(x + 3, y + 5, 14, 12, 3); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(x+10, y+5); ctx.lineTo(x+5, y+1); ctx.lineTo(x+15, y+1); ctx.fill();
+    // Mise à jour de drawMika pour gérer les couleurs
+    function drawMika(foodObj) {
+        ctx.shadowBlur = 15; 
+        
+        if (foodObj.type === "red") {
+            ctx.shadowColor = "red";
+            ctx.fillStyle = "#e74c3c"; // Rouge
+        } else if (foodObj.type === "rainbow") {
+            ctx.shadowColor = "magenta";
+            // Création d'un dégradé pour la Mika Mlouwna
+            let gradient = ctx.createLinearGradient(foodObj.x, foodObj.y, foodObj.x + box, foodObj.y + box);
+            gradient.addColorStop(0, "red");
+            gradient.addColorStop(0.5, "yellow");
+            gradient.addColorStop(1, "blue");
+            ctx.fillStyle = gradient;
+        } else {
+            ctx.shadowColor = "white";
+            ctx.fillStyle = "#000000"; // Noir normal
+        }
+
+        ctx.beginPath(); ctx.roundRect(foodObj.x + 3, foodObj.y + 5, 14, 12, 3); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(foodObj.x+10, foodObj.y+5); ctx.lineTo(foodObj.x+5, foodObj.y+1); ctx.lineTo(foodObj.x+15, foodObj.y+1); ctx.fill();
         ctx.shadowBlur = 0;
     }
 
@@ -123,7 +163,7 @@ game_code = """
             drawMinionSegment(snake[i].x, snake[i].y, i === 0);
         }
 
-        drawMika(food.x, food.y);
+        drawMika(food);
 
         let snakeX = snake[0].x;
         let snakeY = snake[0].y;
@@ -132,12 +172,42 @@ game_code = """
         if( d == "RIGHT") snakeX += box;
         if( d == "DOWN") snakeY += box;
 
+        // Logique de collision avec la nourriture
         if(snakeX == food.x && snakeY == food.y) {
-            score++;
+            
+            if (food.type === "normal") {
+                score++;
+            } 
+            else if (food.type === "red") {
+                score += 5;
+                // Début du mode Turbo (70ms au lieu de 150ms)
+                currentSpeed = 70;
+                clearInterval(gameLoop);
+                gameLoop = setInterval(draw, currentSpeed);
+                
+                // Si on mange 2 rouges d'affilée, on réinitialise le chrono de 5 secondes
+                if (speedTimeout) clearTimeout(speedTimeout);
+                
+                speedTimeout = setTimeout(() => {
+                    currentSpeed = 150; // Retour à la normale
+                    clearInterval(gameLoop);
+                    gameLoop = setInterval(draw, currentSpeed);
+                }, 5000);
+            } 
+            else if (food.type === "rainbow") {
+                score++;
+                // On réduit la taille de 2 (mais on s'assure de garder au moins la tête)
+                let targetLength = Math.max(1, snake.length - 2);
+                while(snake.length > targetLength) {
+                    snake.pop();
+                }
+            }
+
             scoreElement.innerHTML = score;
-            food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
+            food = spawnFood();
+            
         } else {
-            snake.pop();
+            snake.pop(); // Comportement normal si on ne mange rien
         }
 
         let newHead = {x: snakeX, y: snakeY};
@@ -156,7 +226,7 @@ game_code = """
         return false;
     }
 
-    gameLoop = setInterval(draw, 150);
+    gameLoop = setInterval(draw, currentSpeed);
 </script>
 """
 
