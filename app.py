@@ -50,14 +50,13 @@ game_code = """
     let food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
     let d = "RIGHT";
     let changingDirection = false;
+    let gameLoop; // Déclaré globalement pour pouvoir le réinitialiser
 
-    // Focus automatique sur le jeu pour pouvoir utiliser le clavier de suite
     canvas.focus();
 
-    // Gestion du clavier + annulation du scroll de la page avec les flèches
     canvas.addEventListener("keydown", function(event) {
         if([37, 38, 39, 40].indexOf(event.keyCode) > -1) {
-            event.preventDefault(); // Bloque le scroll
+            event.preventDefault(); 
         }
         if(event.keyCode == 37) changeDir("LEFT");
         if(event.keyCode == 38) changeDir("UP");
@@ -68,32 +67,41 @@ game_code = """
     function changeDir(dir) {
         if (changingDirection) return;
 
-        if(dir == "UP" && d != "DOWN") { d = "UP"; changingDirection = true; }
-        if(dir == "DOWN" && d != "UP") { d = "DOWN"; changingDirection = true; }
-        if(dir == "LEFT" && d != "RIGHT") { d = "LEFT"; changingDirection = true; }
-        if(dir == "RIGHT" && d != "LEFT") { d = "RIGHT"; changingDirection = true; }
+        let directionChanged = false;
+
+        // On vérifie aussi qu'on ne spamme pas la même direction
+        if(dir == "UP" && d != "DOWN" && d != "UP") { d = "UP"; directionChanged = true; }
+        if(dir == "DOWN" && d != "UP" && d != "DOWN") { d = "DOWN"; directionChanged = true; }
+        if(dir == "LEFT" && d != "RIGHT" && d != "LEFT") { d = "LEFT"; directionChanged = true; }
+        if(dir == "RIGHT" && d != "LEFT" && d != "RIGHT") { d = "RIGHT"; directionChanged = true; }
+
+        if (directionChanged) {
+            changingDirection = true;
+            // Magie ici : On force le dessin IMMÉDIAT du nouveau mouvement
+            clearInterval(gameLoop);
+            draw(); 
+            // Puis on relance le rythme normal de 150ms
+            gameLoop = setInterval(draw, 150);
+        }
     }
 
     function drawMinionSegment(x, y, isHead) {
-        // Corps Jaune
         ctx.fillStyle = "#f1c40f";
         ctx.beginPath();
         ctx.roundRect(x + 1, y + 1, box - 2, box - 2, 8);
         ctx.fill();
 
-        // Salopette Bleue
         ctx.fillStyle = "#3498db";
         ctx.fillRect(x + 1, y + 12, box - 2, 7);
 
         if(isHead) {
-            // Lunettes et oeil
             ctx.fillStyle = "#333";
             ctx.fillRect(x + 1, y + 6, box - 2, 4);
             ctx.fillStyle = "white";
             ctx.beginPath(); ctx.arc(x + 10, y + 8, 5, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#795548"; // Iris
+            ctx.fillStyle = "#795548"; 
             ctx.beginPath(); ctx.arc(x + 10, y + 8, 2, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "black"; // Pupille
+            ctx.fillStyle = "black"; 
             ctx.beginPath(); ctx.arc(x + 10, y + 8, 1, 0, Math.PI * 2); ctx.fill();
         }
     }
@@ -107,7 +115,7 @@ game_code = """
     }
 
     function draw() {
-        changingDirection = false; // Réinitialise la possibilité de tourner
+        changingDirection = false; 
 
         ctx.fillStyle = "#24344d"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -149,8 +157,8 @@ game_code = """
         return false;
     }
 
-    // Boucle à 100ms pour plus de nervosité
-    let gameLoop = setInterval(draw, 100);
+    // On remet la vitesse de base à 150ms
+    gameLoop = setInterval(draw, 150);
 </script>
 """
 
