@@ -55,8 +55,8 @@ game_code = """
     let gameLoop; 
 
     // ---- VARIABLES BOUBALOU ----
-    // Il commence dans le coin en bas à droite
-    let boubalou = [{x: 19 * box, y: 19 * box}, {x: 19 * box, y: 19 * box}, {x: 19 * box, y: 19 * box}];
+    // Il commence avec la même taille que toi (2 segments)
+    let boubalou = [{x: 19 * box, y: 19 * box}, {x: 19 * box, y: 19 * box}];
     let boubalouTick = 0; 
 
     // Fonction pour faire réapparaître Boubalou dans un coin
@@ -68,14 +68,16 @@ game_code = """
             {x: 19 * box, y: 19 * box}    // Bas Droite
         ];
         
-        // On évite de le faire spawner dans un coin où tu te trouves déjà
         let validCorners = corners.filter(c => !collision(c, snake));
-        if (validCorners.length === 0) validCorners = corners; // Sécurité
+        if (validCorners.length === 0) validCorners = corners;
 
         let corner = validCorners[Math.floor(Math.random() * validCorners.length)];
 
-        // Il réapparaît empilé sur lui-même dans le coin
-        boubalou = [{x: corner.x, y: corner.y}, {x: corner.x, y: corner.y}, {x: corner.x, y: corner.y}];
+        // NOUVEAU : Il réapparaît avec la même longueur que ton Minion actuel
+        boubalou = [];
+        for(let i = 0; i < snake.length; i++) {
+            boubalou.push({x: corner.x, y: corner.y});
+        }
     }
 
     canvas.focus();
@@ -203,7 +205,6 @@ game_code = """
         boubalou.unshift({x: chosenMove.x, y: chosenMove.y}); 
     }
 
-    // Fonction pour déclencher la fin avec un message personnalisé
     function gameOver(message) {
         clearInterval(gameLoop);
         document.getElementById("game-over-text").innerText = message;
@@ -216,7 +217,6 @@ game_code = """
         ctx.fillStyle = "#24344d"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Boubalou bouge une fois sur deux
         boubalouTick++;
         if (boubalouTick % 2 === 0) {
             moveBoubalou();
@@ -231,45 +231,43 @@ game_code = """
 
         let newHead = {x: snakeX, y: snakeY};
 
-        // ==========================================
-        // RÈGLES DE MORT ET DE COLLISION
-        // ==========================================
-
         // 1. Tu meurs si tu touches un mur ou ton propre corps
         if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
             gameOver("Khrat 3lik papaya !");
             return;
         }
 
-        // 2. Tu meurs si TU rentres dans Boubalou (Ta tête touche Boubalou)
+        // 2. Tu meurs si TU rentres dans Boubalou
         if(collision(newHead, boubalou)) {
             gameOver("Tu as foncé sur Boubalou !");
             return;
         }
 
-        // 3. Boubalou meurt s'il TE rentre dedans (Sa tête touche ton corps)
+        // 3. Boubalou meurt s'il TE rentre dedans
         if(collision(boubalou[0], snake)) {
             respawnBoubalou();
         }
 
-        // ==========================================
-
+        // 4. Tu manges la Mika K7la
         if(snakeX == food.x && snakeY == food.y) {
             score++;
             scoreElement.innerHTML = score;
             food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
+            
+            // NOUVEAU : Boubalou grandit en même temps que toi !
+            // On duplique simplement son dernier segment pour qu'il s'allonge au prochain tour
+            boubalou.push({x: boubalou[boubalou.length - 1].x, y: boubalou[boubalou.length - 1].y});
+            
         } else {
             snake.pop();
         }
 
         snake.unshift(newHead);
 
-        // Dessiner ton Minion
         for(let i = 0; i < snake.length; i++) {
             drawMinionSegment(snake[i].x, snake[i].y, i === 0);
         }
 
-        // Dessiner Boubalou
         for(let i = 0; i < boubalou.length; i++) {
             drawBoubalouSegment(boubalou[i].x, boubalou[i].y, i === 0);
         }
