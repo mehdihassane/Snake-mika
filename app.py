@@ -19,7 +19,7 @@ game_code = """
     
     <div id="game-over-screen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255, 0, 0, 0.9); z-index:10; border-radius:20px; flex-direction:column; justify-content:center; align-items:center;">
         <h1 style="color:white; font-size:40px; text-shadow: 0 0 20px black;">BOOM !</h1>
-        <p style="color:white; font-size:24px; font-weight:bold; margin-bottom:20px;">Khrat 3lik papaya !</p>
+        <p id="game-over-text" style="color:white; font-size:24px; font-weight:bold; margin-bottom:20px;">Khrat 3lik papaya !</p>
         <button onpointerdown="location.reload()" style="padding:15px 30px; font-size:20px; background:white; color:red; border:none; border-radius:50px; font-weight:bold; cursor:pointer;">REESSAYER 🔄</button>
     </div>
 
@@ -55,24 +55,27 @@ game_code = """
     let gameLoop; 
 
     // ---- VARIABLES BOUBALOU ----
-    let boubalou = [{x: 18 * box, y: 18 * box}, {x: 19 * box, y: 18 * box}, {x: 19 * box, y: 19 * box}];
+    // Il commence dans le coin en bas à droite
+    let boubalou = [{x: 19 * box, y: 19 * box}, {x: 19 * box, y: 19 * box}, {x: 19 * box, y: 19 * box}];
     let boubalouTick = 0; 
 
-    // Fonction pour faire réapparaître Boubalou ailleurs quand il meurt
+    // Fonction pour faire réapparaître Boubalou dans un coin
     function respawnBoubalou() {
-        let safeX, safeY;
-        let isSafe = false;
-        while(!isSafe) {
-            safeX = Math.floor(Math.random()*16 + 2)*box;
-            safeY = Math.floor(Math.random()*16 + 2)*box;
-            isSafe = true;
-            // On vérifie qu'il ne réapparaît pas SUR toi
-            for(let i=0; i<snake.length; i++) {
-                if(snake[i].x === safeX && snake[i].y === safeY) isSafe = false;
-            }
-        }
-        // Il repart avec sa taille de base
-        boubalou = [{x: safeX, y: safeY}, {x: safeX, y: safeY+box}, {x: safeX, y: safeY+2*box}];
+        const corners = [
+            {x: 0, y: 0},                 // Haut Gauche
+            {x: 19 * box, y: 0},          // Haut Droite
+            {x: 0, y: 19 * box},          // Bas Gauche
+            {x: 19 * box, y: 19 * box}    // Bas Droite
+        ];
+        
+        // On évite de le faire spawner dans un coin où tu te trouves déjà
+        let validCorners = corners.filter(c => !collision(c, snake));
+        if (validCorners.length === 0) validCorners = corners; // Sécurité
+
+        let corner = validCorners[Math.floor(Math.random() * validCorners.length)];
+
+        // Il réapparaît empilé sur lui-même dans le coin
+        boubalou = [{x: corner.x, y: corner.y}, {x: corner.x, y: corner.y}, {x: corner.x, y: corner.y}];
     }
 
     canvas.focus();
@@ -126,7 +129,6 @@ game_code = """
         }
     }
 
-    // ---- FONCTION POUR DESSINER BOUBALOU ----
     function drawBoubalouSegment(x, y, isHead) {
         ctx.fillStyle = "#8e44ad"; 
         ctx.beginPath();
@@ -137,7 +139,6 @@ game_code = """
         ctx.fillRect(x + 1, y + 12, box - 2, 7);
 
         if(isHead) {
-            // Affichage de son nom au-dessus de sa tête
             ctx.fillStyle = "white";
             ctx.font = "bold 11px sans-serif";
             ctx.textAlign = "center";
@@ -202,6 +203,13 @@ game_code = """
         boubalou.unshift({x: chosenMove.x, y: chosenMove.y}); 
     }
 
+    // Fonction pour déclencher la fin avec un message personnalisé
+    function gameOver(message) {
+        clearInterval(gameLoop);
+        document.getElementById("game-over-text").innerText = message;
+        document.getElementById("game-over-screen").style.display = "flex";
+    }
+
     function draw() {
         changingDirection = false; 
 
@@ -214,6 +222,48 @@ game_code = """
             moveBoubalou();
         }
 
+        let snakeX = snake[0].x;
+        let snakeY = snake[0].y;
+        if( d == "LEFT") snakeX -= box;
+        if( d == "UP") snakeY -= box;
+        if( d == "RIGHT") snakeX += box;
+        if( d == "DOWN") snakeY += box;
+
+        let newHead = {x: snakeX, y: snakeY};
+
+        // ==========================================
+        // RÈGLES DE MORT ET DE COLLISION
+        // ==========================================
+
+        // 1. Tu meurs si tu touches un mur ou ton propre corps
+        if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
+            gameOver("Khrat 3lik papaya !");
+            return;
+        }
+
+        // 2. Tu meurs si TU rentres dans Boubalou (Ta tête touche Boubalou)
+        if(collision(newHead, boubalou)) {
+            gameOver("Tu as foncé sur Boubalou !");
+            return;
+        }
+
+        // 3. Boubalou meurt s'il TE rentre dedans (Sa tête touche ton corps)
+        if(collision(boubalou[0], snake)) {
+            respawnBoubalou();
+        }
+
+        // ==========================================
+
+        if(snakeX == food.x && snakeY == food.y) {
+            score++;
+            scoreElement.innerHTML = score;
+            food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
+        } else {
+            snake.pop();
+        }
+
+        snake.unshift(newHead);
+
         // Dessiner ton Minion
         for(let i = 0; i < snake.length; i++) {
             drawMinionSegment(snake[i].x, snake[i].y, i === 0);
@@ -225,47 +275,6 @@ game_code = """
         }
 
         drawMika(food.x, food.y);
-
-        let snakeX = snake[0].x;
-        let snakeY = snake[0].y;
-        if( d == "LEFT") snakeX -= box;
-        if( d == "UP") snakeY -= box;
-        if( d == "RIGHT") snakeX += box;
-        if( d == "DOWN") snakeY += box;
-
-        let newHead = {x: snakeX, y: snakeY};
-
-        // GESTION DU GAME OVER (Uniquement les murs et toi-même)
-        if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
-            clearInterval(gameLoop);
-            document.getElementById("game-over-screen").style.display = "flex";
-            return;
-        }
-
-        // GESTION DE BOUBALOU : C'est LUI qui meurt s'il y a contact !
-        let boubalouIsDead = false;
-        // Si tu lui rentres dedans
-        if(collision(newHead, boubalou)) {
-            boubalouIsDead = true;
-        }
-        // S'il te rentre dedans
-        if(collision(boubalou[0], snake) || (boubalou[0].x === newHead.x && boubalou[0].y === newHead.y)) {
-            boubalouIsDead = true;
-        }
-
-        if(boubalouIsDead) {
-            respawnBoubalou();
-        }
-
-        if(snakeX == food.x && snakeY == food.y) {
-            score++;
-            scoreElement.innerHTML = score;
-            food = {x: Math.floor(Math.random()*18 + 1)*box, y: Math.floor(Math.random()*18 + 1)*box};
-        } else {
-            snake.pop();
-        }
-
-        snake.unshift(newHead);
     }
 
     function collision(head, array) {
